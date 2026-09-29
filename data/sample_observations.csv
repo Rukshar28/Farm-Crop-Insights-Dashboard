@@ -1,0 +1,7 @@
+plot_name,location,crop_type,area_hectares,observation_date,rainfall_mm,yield_kg,note
+North Field,Demo Farm,Wheat,2.0,2026-06-01,22,420,Fictional sample
+River Plot,Demo Farm,Rice,1.5,2026-06-01,48,510,Fictional sample
+East Field,Demo Farm,Maize,1.2,2026-06-02,30,360,Fictional sample
+North Field,Demo Farm,Wheat,2.0,2026-06-15,18,455,Fictional sample
+River Plot,Demo Farm,Rice,1.5,2026-06-15,55,545,Fictional sample
+East Field,Demo Farm,Maize,1.2,2026-06-16,27,390,Fictional sample
