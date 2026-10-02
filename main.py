@@ -4,7 +4,7 @@ from models import FarmPlot, CropObservation
 from database import FarmDatabase
 from analytics import summarize, export_csv
 from visualization import create_charts
-from lifecycle_demo import run_demo
+from lifecycle_demo import run_demo\nfrom weather_api import fetch_current_weather, WeatherAPIError\nfrom pipeline import import_observations
 
 db = FarmDatabase()
 DATA_DIR = Path(__file__).parent / "data"
@@ -99,6 +99,9 @@ def main():
 6. Generate charts
 7. Export observations to CSV
 8. Run object lifecycle demo
+9. Fetch and save current weather for a location
+10. View saved weather observations
+11. Import observations from sample CSV (ETL)
 0. Exit
 """)
         choice = input("Choose an option: ").strip()
@@ -123,12 +126,35 @@ def main():
                 print(f"CSV exported to {path}")
             elif choice == "8":
                 run_demo()
+            elif choice == "9":
+                location = input("Enter a city/place name (e.g., Bengaluru): ").strip()
+                weather = fetch_current_weather(location)
+                db.save_weather(weather)
+                print(f"Saved weather for {weather['location_name']}, {weather['country']} "
+                      f"at {weather['observed_at']}: {weather['temperature_c']} °C, "
+                      f"humidity {weather['humidity_percent']}%, "
+                      f"precipitation {weather['precipitation_mm']} mm, "
+                      f"wind {weather['wind_speed_kmh']} km/h.")
+            elif choice == "10":
+                weather_rows = db.list_weather()
+                if not weather_rows:
+                    print("No saved weather observations yet.")
+                for row in weather_rows:
+                    print(f"{row['observed_at']} | {row['location_name']}, {row['country']} | "
+                          f"{row['temperature_c']} °C | rain {row['precipitation_mm']} mm | "
+                          f"wind {row['wind_speed_kmh']} km/h")
+            elif choice == "11":
+                result = import_observations(DATA_DIR / "sample_observations.csv", db)
+                print(f"CSV rows: {result['read']} | imported: {result['imported']} | "
+                      f"duplicates skipped: {result['duplicates_skipped']}")
+                for error in result["errors"]:
+                    print("Validation issue:", error)
             elif choice == "0":
                 print("Goodbye!")
                 break
             else:
                 print("Please choose a listed option.")
-        except (ValueError, KeyError) as error:
+        except (ValueError, KeyError, WeatherAPIError) as error:
             print(f"Input/data error: {error}")
         except Exception as error:
             print(f"Operation failed: {error}")

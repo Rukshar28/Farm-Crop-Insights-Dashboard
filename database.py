@@ -42,6 +42,22 @@ class FarmDatabase:
                 )
             """)
 
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS weather_observations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    location_name TEXT NOT NULL,
+                    country TEXT DEFAULT '',
+                    latitude REAL NOT NULL,
+                    longitude REAL NOT NULL,
+                    observed_at TEXT NOT NULL,
+                    temperature_c REAL,
+                    humidity_percent REAL,
+                    precipitation_mm REAL,
+                    wind_speed_kmh REAL,
+                    source TEXT NOT NULL DEFAULT 'Open-Meteo'
+                )
+            """)
+
     def count_plots(self):
         with self.connect() as conn:
             return conn.execute("SELECT COUNT(*) FROM plots").fetchone()[0]
@@ -76,6 +92,29 @@ class FarmDatabase:
                 FROM observations o JOIN plots p ON p.id = o.plot_id
                 ORDER BY o.observation_date, o.id
             """).fetchall()
+        return [dict(row) for row in rows]
+
+
+    def save_weather(self, weather):
+        with self.connect() as conn:
+            cursor = conn.execute("""
+                INSERT INTO weather_observations
+                (location_name, country, latitude, longitude, observed_at,
+                 temperature_c, humidity_percent, precipitation_mm, wind_speed_kmh, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (weather["location_name"], weather.get("country", ""),
+                  weather["latitude"], weather["longitude"], weather["observed_at"],
+                  weather.get("temperature_c"), weather.get("humidity_percent"),
+                  weather.get("precipitation_mm"), weather.get("wind_speed_kmh"),
+                  weather.get("source", "Open-Meteo")))
+            return cursor.lastrowid
+
+    def list_weather(self, limit=20):
+        with self.connect() as conn:
+            rows = conn.execute("""
+                SELECT * FROM weather_observations
+                ORDER BY observed_at DESC, id DESC LIMIT ?
+            """, (int(limit),)).fetchall()
         return [dict(row) for row in rows]
 
     def analytics_rows(self):
